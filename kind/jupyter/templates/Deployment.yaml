@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    notebook-name: {{ .Chart.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}
+        {{ if .Values.prob }}
+        data.statcan.gc.ca/classification: protected-b
+        {{ else if .Values.noprob }}
+        data.statcan.gc.ca/classification: unclassified
+        {{ end }}
+    spec:
+      containers:
+      - name: {{ .Chart.Name }}
+        {{ toYaml .Values.image | nindent 8 }}
+        {{ if not .Values.image.env }}
+        env:
+        {{ end }}
+        - name: NB_PREFIX
+          value: /notebook/{{ .Values.namespace }}/{{ .Chart.Name }}
+        ports:
+        - containerPort: {{ .Values.targetPort }}

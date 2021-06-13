@@ -1,0 +1,20 @@
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  namespace: alice #root namespace 
+  name: rstudio-rstudio-prob-block
+spec:
+  selector:
+    matchLabels:
+      notebook-name: rstudio
+      data.statcan.gc.ca/classification: protected-b
+  action: DENY
+  rules:
+  - to:
+    - operation:
+        methods: ["POST"]
+        paths: ["/notebook/alice/rstudio/rstudio/upload"] # Need a way to be 'generic'
+    - operation:
+        methods: ["GET"]
+        paths: ["/notebook/alice/rstudio/rstudio/export*"]
+        
