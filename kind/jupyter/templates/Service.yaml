@@ -9,4 +9,4 @@ spec:
     port: 80
     targetPort: {{ .Values.targetPort }}
   selector:
-    app: {{ .Chart.Name }}
+    notebook-name: {{ .Chart.Name }}

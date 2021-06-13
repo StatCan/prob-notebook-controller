@@ -2,21 +2,28 @@
 
 PROJECT_NAME := istio-test
 ISTIO_RELEASE := 1.5.10
- 
+REGISTRY := k8scc01covidacr.azurecr.io
+CONTROLLER := prob-notebook-controller
+TAG := latest
+
 CHROMIUM := chromium
 #CHROMIUM := flatpak run org.chromium.Chromium
 
 # ProB, Unclass, unspecified
-rstudio-alice_classification = '--set classification="protected-b"'
-rstudio-bob_classification   = '--set classification="unclassified"'
-rstudio-carla_classification = ''
+rstudio-alice_classification = --set classification="protected-b"
+rstudio-bob_classification   = --set classification="unclassified"
+rstudio-carla_classification =
 
 # ProB, Unclass, unspecified
-jupyter-alice_classification = '--set classification="protected-b"'
-jupyter-bob_classification   = '--set classification="unclassified"'
-jupyter-carla_classification = ''
+jupyter-alice_classification = --set classification="protected-b"
+jupyter-bob_classification   = --set classification="unclassified"
+jupyter-carla_classification =
 
-.PHONY: kind create jupyter rstudio
+.PHONY: kind create jupyter rstudio gatekeeper
+.DEFAULT: create
+
+create: kind create-users install-istio notebook-crd gatekeeper configure-users
+	@echo "Cluster is all set up for users!"
 
 kind:
 	###  _   ___           _
@@ -64,43 +71,56 @@ install-istio: istio
 
 gatekeeper:
 	kubectl apply -f https://raw.githubusercontent.com/open-policy-agent/gatekeeper/release-3.4/deploy/gatekeeper.yaml
-	kubectl apply -f gatekeeper-test/gatekeeperconfig.yaml
-	kubectl apply -f gatekeeper-test/constraintTemplate.yaml
-	while ! kubectl apply -f gatekeeper-test/constraint.yaml; do sleep 15; done
+	sleep 10
+	while ! kubectl apply -f gatekeeper/gatekeeperconfig.yaml; do sleep 15; done
+	kubectl apply -f gatekeeper/constraintTemplate.yaml
+	while ! kubectl apply -f gatekeeper/constraint.yaml; do sleep 15; done
 
 notebook-crd:
 	kubectl apply -f https://raw.githubusercontent.com/kubeflow/kubeflow/master/components/notebook-controller/config/crd/bases/kubeflow.org_notebooks.yaml
-
-create: kind create-namespaces install-istio gatekeeper notebook-crd 
-	@echo "Cluster is all set up for users!"
 
 chromium:
 	$(CHROMIUM) --host-resolver-rules='MAP *.muchk8s.wow 127.0.0.1:8443' &
 	kubectl port-forward -n istio-system svc/istio-ingressgateway 8443:80
 
-###  _   _                   
-### | | | |                  
-### | | | |___  ___ _ __ ___ 
+
+controller:
+	cd .. && docker build . -t $(REGISTRY)/$(CONTROLLER):$(TAG)
+	kind load docker-image $(REGISTRY)/$(CONTROLLER):$(TAG) --name $(PROJECT_NAME)
+
+controller-deploy: controller
+	kubectl create namespace daaas || true
+	kubectl label  namespace daaas istio-injection=enabled --overwrite || true
+	IMAGE_SHA=$(TAG) envsubst < ../deploy/deploy.yaml.tpl > ../deploy/deploy.yaml
+	kubectl apply -f ../deploy/deploy.yaml
+
+###  _   _
+### | | | |
+### | | | |___  ___ _ __ ___
 ### | | | / __|/ _ \ '__/ __|
 ### | |_| \__ \  __/ |  \__ \
 ###  \___/|___/\___|_|  |___/
-###                          
+###
 create-users: alice bob carla
 alice bob carla:
 	kubectl create namespace $@ || true
 	kubectl label  namespace $@ istio-injection=enabled --overwrite || true
 
+configure-users:
 	# Alice has an Authorization Policy (Only Alice!)
-	kubectl apply -f uploadPolicy.yaml
+	# Create the alice jupyter notebook
+	kubectl apply -f alice-notebook-jupyter.yaml
+	#This can now be managed by the controller
+	# kubectl apply -f uploadPolicy.yaml
+	# kubectl apply -f uploadPolicyJupyter.yaml
 
 delete-users remove-users:
 	kubectl delete namespace alice || true
 	kubectl delete namespace bob   || true
 	kubectl delete namespace carla || true
 
-
 rstudio: rstudio-alice rstudio-bob rstudio-carla
-rstudio-alice rstudio-bob rstudio-carla:
+rstudio-alice rstudio-bob rstudio-carla: create-users
 	KUBEFLOW_USER=$$(echo $@ | awk -F '-' '{print $$NF}'); \
 	helm template ./rstudio --set namespace=$$KUBEFLOW_USER \
 		${${@}_classification} \
@@ -112,7 +132,7 @@ rstudio-delete-alice rstudio-delete-bob rstudio-delete-carla:
 	helm template ./rstudio --set namespace=$$NS | kubectl delete -f -
 
 jupyter: jupyter-alice jupyter-bob jupyter-carla
-jupyter-alice jupyter-bob jupyter-carla:
+jupyter-alice jupyter-bob jupyter-carla: create-users
 	KUBEFLOW_USER=$$(echo $@ | awk -F '-' '{print $$NF}'); \
 	helm template ./jupyter --set namespace=$$KUBEFLOW_USER \
 		${${@}_classification} \
