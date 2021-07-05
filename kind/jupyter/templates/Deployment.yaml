@@ -8,16 +8,14 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ .Chart.Name }}
+      notebook-name: {{ .Chart.Name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ .Chart.Name }}
-        {{ if .Values.prob }}
-        data.statcan.gc.ca/classification: protected-b
-        {{ else if .Values.noprob }}
-        data.statcan.gc.ca/classification: unclassified
+        notebook-name: {{ .Chart.Name }}
+        {{ if .Values.classification }}
+        data.statcan.gc.ca/classification: {{ .Values.classification }}
         {{ end }}
     spec:
       containers:
