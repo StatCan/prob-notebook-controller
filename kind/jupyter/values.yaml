@@ -3,7 +3,7 @@ prob: true
 noprob: true
 image:
   image: jupyter/minimal-notebook
-  imagePullPolicy: Always
+  imagePullPolicy: IfNotPresent 
   command: ["jupyter"]
   args:
   - "notebook"
