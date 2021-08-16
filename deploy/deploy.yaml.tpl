@@ -27,6 +27,7 @@ spec:
         - name: k8scc01covidacr-registry-connection
       containers:
       - name: notebook-auth-policy-checker
+        imagePullPolicy: IfNotPresent
         image: k8scc01covidacr.azurecr.io/prob-notebook-controller:${IMAGE_SHA}
         resources:
           limits:

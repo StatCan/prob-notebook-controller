@@ -88,23 +88,34 @@ func (c *Controller) generateAuthorizationPolicy(notebook *v1.Notebook)(*istiose
 				{
 					To: []*v1beta1.Rule_To{
 						{
+							//Rstudio upload
 							Operation: &v1beta1.Operation{
 								Methods: []string{"POST"},
 								Paths: []string{fmt.Sprintf("/notebook/%s/%s/rstudio/upload", notebook.Namespace, notebook.Name)},
 							},
 						},
 						{
+							//Rstudio download
 							Operation: &v1beta1.Operation{
 								Methods: []string{"GET"},
 								Paths: []string{fmt.Sprintf("/notebook/%s/%s/rstudio/export*", notebook.Namespace, notebook.Name)},
 							},
 						},
 						{
+							//Jupyter download
 							Operation: &v1beta1.Operation{
 								Methods: []string{"GET"},
 								Paths: []string{fmt.Sprintf("/notebook/%s/%s/files*", notebook.Namespace, notebook.Name)},
 							},
 						},
+						{
+							//Jupyter download - convert as
+							Operation: &v1beta1.Operation{
+								Methods: []string{"GET"},
+								Paths: []string{fmt.Sprintf("/notebook/%s/%s/nbconvert*", notebook.Namespace, notebook.Name)},
+							},
+						},
+						// VS Code download - handled by the image
 					},
 				},
 			},
