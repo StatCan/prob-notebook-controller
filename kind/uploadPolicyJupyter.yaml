@@ -2,7 +2,7 @@ apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
   namespace: alice #root namespace 
-  name: jupyter-prob-block
+  name: jupyter-protected-b-block
 spec:
   selector:
     matchLabels:

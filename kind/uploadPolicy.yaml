@@ -2,7 +2,7 @@ apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
   namespace: alice #root namespace 
-  name: rstudio-prob-block
+  name: rstudio-protected-b-block
 spec:
   selector:
     matchLabels:
