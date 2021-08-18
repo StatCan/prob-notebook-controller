@@ -15,11 +15,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 const (
-	probBlock = "prob-block"
+	protectedBBlock = "protected-b-block"
 )
 
 func notebookAuthPolicyName(notebook *v1.Notebook) string {
-	return fmt.Sprintf("%s-%s", notebook.Name, probBlock)
+	return fmt.Sprintf("%s-%s", notebook.Name, protectedBBlock)
 }
 
 func (c *Controller) handleAuthorizationPolicy(notebook *v1.Notebook) error {
