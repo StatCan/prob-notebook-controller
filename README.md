@@ -1,12 +1,36 @@
 [(Français)](#contr%C3%B4leur-bloc-note-prob)
 
+
 ## Prob Notebook Controller
 
 Based on https://github.com/StatCan/kubeflow-controller
 **There is a dependency on that repository** as well since it needs to be imported in order to use the `Notebook` struct and `NotebookInformer`.
 
-This controller creates and deletes Authorization Policies based on Notebooks. 
-The Authorization Policies block uploads and downloads on jupyterlab and rstudio images.
+This controller creates and deletes Authorization Policies based on Notebooks to ensure protected B notebooks have the correct restrictions. 
+Specifically, it watches the creation of Notebook CRDs and creates authorization policies for protected B notebooks. It can also detect if a protected B notebook did not have the policies. 
+
+The [Authorization Policies](https://istio.io/latest/docs/tasks/security/authentication/authn-policy/) are generated in the handler.go and [blocks specific paths](https://github.com/StatCan/aaw-prob-notebook-controller/blob/dc1cd29e818c413b24385b406f4c22a0bdbf009a/pkg/controller/handler.go#L87-L117) those API calls/paths are the ones used in the uploads and downloads on jupyterlab and rstudio images.
+Example:
+```
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: httpbin
+  namespace: foo
+spec:
+  action: ALLOW
+  rules:
+  - from:
+    - source:
+        principals: ["cluster.local/ns/default/sa/sleep"]
+    - source:
+        namespaces: ["test"]
+    to:
+    - operation:
+        methods: ["GET"]
+        paths: ["/info*"]
+```
+source: https://istio.io/latest/docs/reference/config/security/authorization-policy/
 
 ### How to use
 Go check the [README](https://github.com/StatCan/prob-notebook-controller/blob/master/kind/README.md) in the kind folder for instruction on running it locally.
@@ -22,6 +46,8 @@ Unless otherwise noted, the source code of this project is covered under Crown C
 The Canada wordmark and related graphics associated with this distribution are protected under trademark law and copyright law. 
 No permission is granted to use them outside the parameters of the Government of Canada's corporate identity program. 
 For more information, see [Federal identity requirements](https://www.canada.ca/en/treasury-board-secretariat/topics/government-communications/federal-identity-requirements.html).
+
+____
 
 
 ## Contrôleur bloc-note prob 
