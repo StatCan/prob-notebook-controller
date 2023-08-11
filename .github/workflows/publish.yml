@@ -35,7 +35,6 @@ jobs:
     - run: |
         docker build -f Dockerfile -t localhost:5000/prob-notebook-controller:${{ github.sha }} .
         docker push localhost:5000/prob-notebook-controller:${{ github.sha }}
-        docker rmi localhost:5000/prob-notebook-controller:${{ github.sha }}
         docker image prune
 
     # Scan image for vulnerabilities
@@ -43,6 +42,17 @@ jobs:
       run: |
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin ${{ env.TRIVY_VERSION }}
         trivy image localhost:5000/prob-notebook-controller:${{ github.sha }} --exit-code 1 --timeout=20m --security-checks vuln --severity CRITICAL
+
+    # Run Dockle
+    - name: Run dockle
+      uses: goodwithtech/dockle-action@main
+      with:
+        image: localhost:5000/prob-notebook-controller:${{ github.sha }}
+        format: 'list'
+        exit-code: '0'
+        # Must determine when / how we want to exit
+        #exit-level: 'fatal'
+        ignore: 'DKL-DI-0006'
 
     # Connect to Azure Container registry (ACR)
     - uses: azure/docker-login@v1
