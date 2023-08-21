@@ -62,6 +62,6 @@ jobs:
 
     # Push to a Azure Container registry (ACR)
     - run: |
-        docker pull localhost:5000/prob-notebook-controller:${{ github.sha }
-        docker tag localhost:5000/prob-notebook-controller:${{ github.sha } ${{ env.REGISTRY_NAME }}.azurecr.io/prob-notebook-controller:${{ github.sha }
+        docker pull localhost:5000/prob-notebook-controller:${{ github.sha }}
+        docker tag localhost:5000/prob-notebook-controller:${{ github.sha }} ${{ env.REGISTRY_NAME }}.azurecr.io/prob-notebook-controller:${{ github.sha }}
         docker push ${{ env.REGISTRY_NAME }}.azurecr.io/prob-notebook-controller:${{ github.sha }}
